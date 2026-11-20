@@ -17,6 +17,8 @@ try {
         throw new Exception($conn->connect_error);
     }
     $conn->set_charset('utf8mb4');
+    // TiDB enforces ONLY_FULL_GROUP_BY (XAMPP/MariaDB does not); the detail and CSV queries rely on the relaxed behaviour.
+    $conn->query("SET SESSION sql_mode = TRIM(BOTH ',' FROM REPLACE(@@sql_mode, 'ONLY_FULL_GROUP_BY', ''))");
 } catch (Throwable $e) {
     error_log('Database connection failed: ' . $e->getMessage());   // details go to the server log, not to visitors
     http_response_code(500);
