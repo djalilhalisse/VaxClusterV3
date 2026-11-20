@@ -1,0 +1,8 @@
+.git
+.github
+db sql
+models
+tools
+*.zip
+*.md
+render.yaml
