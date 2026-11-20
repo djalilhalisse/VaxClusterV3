@@ -8,14 +8,28 @@ $st=$conn->prepare("SELECT Patient.*,GROUP_CONCAT(DISTINCT Maladie_Chronique.nom
  WHERE Patient.id_patient=? GROUP BY Patient.id_patient");
 $st->bind_param('s',$id);$st->execute();$p=$st->get_result()->fetch_assoc();
 if(!$p){open_page('Not found','app','list','Patient not found');echo '<div class="card empty">No patient has the ID “'.h($id).'”. <a href="patients_list.php">Back to patients</a></div>';close_page('app');exit;}
+ensure_prediction_table($conn);
+$pq=$conn->prepare("SELECT created_at, results FROM Prediction_Result WHERE id_patient=? ORDER BY id DESC LIMIT 10");$pq->bind_param('s',$id);$pq->execute();$preds=$pq->get_result()->fetch_all(MYSQLI_ASSOC);
+$okmsg=msg(flash('success_message'));
 $sec=['Patient'=>['National ID'=>'id_patient','Gender'=>'sexe','Age'=>'age','Phone'=>'tel','Address'=>'adresse','Added'=>'createdate'],
  'Vaccination'=>['Vaccine'=>'type_vaccin','Dose'=>'dose','Batch number'=>'num_lot','Expiry date'=>'date_peremption','Date'=>'date_vaccination','Time'=>'heure_vaccination','Location'=>'lieu_vaccination','Injection site'=>'site','Season'=>'season']];
-open_page($p['nom'],'app','list',$p['nom'],'<a class="btn sm ghost" href="patients_list.php">Back</a> <a class="btn sm" href="patient_form.php?id='.urlencode($p['id_patient']).'">'.icon('clip').'Report side effects</a>'); ?>
+open_page($p['nom'],'app','list',$p['nom'],'<a class="btn sm ghost" href="patients_list.php">'.icon('back').'Back</a> <a class="btn sm ghost" href="edit_patient.php?id='.urlencode($p['id_patient']).'">'.icon('edit').'Edit</a> <a class="btn sm" href="patient_form.php?id='.urlencode($p['id_patient']).'">'.icon('clip').'Report side effects</a>'); ?>
+<?php if($okmsg): ?><div class="alert ok" role="status"><?=h($okmsg)?></div><?php endif; ?>
 <div class="cols"><div>
 <?php foreach($sec as $t=>$f): ?><div class="card" style="margin-bottom:18px"><h3><?=$t?></h3><dl class="dgrid"><?php foreach($f as $l=>$k): ?><div><dt><?=$l?></dt><dd><?=h($p[$k]?:'–')?></dd></div><?php endforeach; ?></dl></div><?php endforeach; ?>
 <div class="card"><h3>Medical history</h3><?php foreach(explode('|',$p['antecedents']?:'No Background') as $a) echo '<span class="tag">'.h($a).'</span>'; ?></div></div>
-<div class="card"><h3>Reported side effects</h3>
+<div><div class="card" style="margin-bottom:18px"><h3>Reported side effects</h3>
 <?php if($p['side_effects']): foreach(explode('|',$p['side_effects']) as $e) echo '<span class="tag coral">'.h($e).'</span>'; ?>
 <dl class="dgrid" style="margin-top:14px"><div><dt>Started</dt><dd><?=h($p['date_apparition']?:'–')?></dd></div><div><dt>Duration</dt><dd><?=h($p['duree_manifestation']?$p['duree_manifestation'].' days':'–')?></dd></div></dl>
-<?php else: ?><p class="muted">Nothing reported yet.</p><a class="btn sm" href="patient_form.php?id=<?=urlencode($p['id_patient'])?>">Report side effects</a><?php endif; ?></div></div>
+<?php else: ?><p class="muted">Nothing reported yet.</p><a class="btn sm" href="patient_form.php?id=<?=urlencode($p['id_patient'])?>">Report side effects</a><?php endif; ?></div>
+<div class="card"><h3>Saved predictions</h3>
+<?php if($p['type_vaccin']): ?><form method="post" action="predicts.php" style="margin:0 0 12px"><?=csrf_field()?><input type="hidden" name="id" value="<?=h($p['id_patient'])?>"><button class="btn sm<?=$preds?' ghost':''?>" data-busy="busy"><?=icon($preds?'refresh':'activity')?><?=$preds?'Predict again':'Predict side effects'?></button></form>
+<?php else: ?><p class="muted small"><?=h(msg('no_vacc'))?></p><?php endif; ?>
+<?php if(!$preds): ?><p class="muted small">No prediction has been saved for this patient yet.</p><?php endif; ?>
+<?php foreach($preds as $pr): [$avg,]=avg_predictions(json_decode($pr['results'],true)?:[]); $top=$avg?array_key_first($avg):null; ?>
+<details class="pred"><summary><b><?=h(substr($pr['created_at'],0,16))?></b><?php if($top!==null): ?> <span class="tag"><?=h($top)?> <?=$avg[$top]?>%</span><?php endif; ?></summary>
+<ul class="bars"><?php foreach(array_slice($avg,0,8,true) as $e=>$v): ?><li><span><?=h($e)?></span><span class="t"><i style="width:<?=min(100,$v*2)?>%"></i></span><b><?=$v?></b></li><?php endforeach; ?></ul></details>
+<?php endforeach; ?></div></div></div>
+<div class="busy" id="busy" role="status" aria-live="polite"><div><div class="spin"></div><p>Running the three models… this can take a moment.</p></div></div>
+<script src="assets/js/app.js"></script>
 <?php close_page('app'); ?>

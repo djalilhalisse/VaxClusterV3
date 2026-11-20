@@ -1,10 +1,10 @@
 <?php require __DIR__.'/includes/bootstrap.php'; require __DIR__.'/configuration/db_connection.php';
-$mode=empty($_SESSION['username'])?'public':'app'; $ok=flash('success_message'); $err=flash('error_message');
+$mode=empty($_SESSION['username'])?'public':'app'; $ok=msg(flash('success_message')); $err=msg(flash('error_message'));
 $fx=$conn->query("SELECT description FROM effet_secondaire ORDER BY description");
 open_page('Report side effects',$mode,'report'); if($mode==='public') echo '<div class="wrap" style="padding-top:48px"><h1 style="font-size:2.4rem">Report side effects</h1>'; else echo '<div>'; ?>
 <div class="card panel">
 <?php if($ok): ?><div class="alert ok" role="status"><?=h($ok)?></div><?php endif; ?><?php if($err): ?><div class="alert" role="alert"><?=h($err)?></div><?php endif; ?>
-<form action="patient_form_action.php" method="post">
+<form action="patient_form_action.php" method="post"><?=csrf_field()?>
 <div class="field"><label for="idnum">National ID</label><input id="idnum" name="idnum" inputmode="numeric" maxlength="20" pattern="[0-9]+" value="<?=h($_GET['id']??'')?>" required></div>
 <div class="field"><span class="lbl">Side effects experienced</span><div class="chips">
 <?php while($r=$fx->fetch_assoc()): ?><label><input type="checkbox" name="side_effects[]" value="<?=h($r['description'])?>"><span><?=h($r['description'])?></span></label><?php endwhile; ?></div></div>

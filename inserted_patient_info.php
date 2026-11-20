@@ -1,5 +1,5 @@
 <?php require __DIR__.'/includes/bootstrap.php'; require_login();
-$p=$_SESSION['patient_info']??null; if(!$p){header('Location: add_patient.php');exit;} $ok=flash('success_message');
+$p=$_SESSION['patient_info']??null; if(!$p){header('Location: add_patient.php');exit;} $ok=msg(flash('success_message'));
 $rows=['National ID'=>'idnum','Gender'=>'gender','Age'=>'age','Address'=>'adresse','Phone'=>'tel','Vaccine'=>'vaccin','Dose'=>'dose','Batch number'=>'lot','Expiry date'=>'peremption','Location'=>'lieuvac','Date'=>'datevac','Time'=>'heurevac','Injection site'=>'site','Season'=>'season'];
 open_page('Patient saved','app','add',$p['name'].' was added'); ?>
 <?php if($ok): ?><div class="alert ok" role="status"><?=h($ok)?></div><?php endif; ?>

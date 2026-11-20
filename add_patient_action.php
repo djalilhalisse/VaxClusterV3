@@ -1,170 +1,74 @@
 <?php
-session_start();
+require __DIR__ . '/includes/bootstrap.php';
+require_login();
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') { header('Location: add_patient.php'); exit; }
+csrf_check();
+require __DIR__ . '/configuration/db_connection.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    require('./configuration/db_connection.php');
+$f = fn($k) => trim($_POST[$k] ?? '');
+$idnum = $f('idnum'); $name = $f('name'); $gender = $f('gender'); $age = $f('age'); $adresse = $f('adresse'); $tel = $f('tel');
+$vaccin = $f('vaccin'); $lot = $f('numlot'); $peremption = $f('dateperemp'); $lieuvac = $f('lieuvac'); $datevac = $f('datevac');
+$heurevac = $f('timevac'); $site = $f('Site'); $dose = $f('dose');
+$antecedents = array_values(array_filter((array)($_POST['antecedents'] ?? []), 'strlen'));
+$new_antecedents = array_values(array_filter(array_map('trim', (array)($_POST['new_antecedents'] ?? [])), 'strlen'));
 
-    $idnum = htmlspecialchars(trim($_POST['idnum']));
-    $name = htmlspecialchars(trim($_POST['name']));
-    $gender = htmlspecialchars(trim($_POST['gender']));
-    $age = htmlspecialchars(trim($_POST['age']));
-    $adresse = htmlspecialchars(trim($_POST['adresse']));
-    $tel = htmlspecialchars(trim($_POST['tel']));
-    $vaccin = htmlspecialchars(trim($_POST['vaccin']));
-    $lot = htmlspecialchars(trim($_POST['numlot']));
-    $peremption = htmlspecialchars(trim($_POST['dateperemp']));
-    $lieuvac = htmlspecialchars(trim($_POST['lieuvac']));
-    $datevac = htmlspecialchars(trim($_POST['datevac']));
-    $heurevac = htmlspecialchars(trim($_POST['timevac']));
-    $site = htmlspecialchars(trim($_POST['Site']));
-    $dose = htmlspecialchars(trim($_POST['dose']));
-    $antecedents = isset($_POST['antecedents']) ? $_POST['antecedents'] : [];
-    $new_antecedents = isset($_POST['new_antecedents']) ? array_filter(array_map('trim', $_POST['new_antecedents'])) : []; // Trim and filter empty values
-
-    $all_antecedents = array_merge($antecedents, $new_antecedents);
-
-    $unique_antecedents = array_unique($all_antecedents);
-
-    $antecedents_string = implode(', ', $unique_antecedents);
-
-    $season = getSeason($datevac);
-
-    if (empty($idnum) || empty($name) || empty($gender) || empty($age) || empty($adresse) || empty($tel) || empty($vaccin) || empty($lot) || empty($peremption) || empty($lieuvac) || empty($datevac) || empty($heurevac) || empty($site) || empty($dose)) {
-        echo '<script>alert("All fields are required."); window.location="./add_patient.php";</script>';
-        exit();
-    }
-
-    $sql_check_idnum = "SELECT id_patient FROM Patient WHERE id_patient = ?";
-    $stmt_check_idnum = $conn->prepare($sql_check_idnum);
-    $stmt_check_idnum->bind_param("s", $idnum);
-    $stmt_check_idnum->execute();
-    $stmt_check_idnum->store_result();
-    if ($stmt_check_idnum->num_rows > 0) {
-        $stmt_check_idnum->close();
-
-        $_SESSION['error_message'] = "ID Number already exists.";
-        header("Location: ./add_patient.php?error=idnum_exists&value=' . $idnum . '");
-        exit();
-    }
-    $stmt_check_idnum->close();
-
-    $conn->begin_transaction();
-
-    try {
-        // Insert into Patient table
-        $sql_patient = "INSERT INTO Patient (id_patient, nom, age, sexe, adresse, tel) VALUES (?, ?, ?, ?, ?, ?)";
-        $stmt_patient = $conn->prepare($sql_patient);
-        $stmt_patient->bind_param("ssisss", $idnum, $name, $age, $gender, $adresse, $tel);
-        $stmt_patient->execute();
-
-        // Insert into Vaccination table
-        $sql_vaccination = "INSERT INTO Vaccination (type_vaccin, num_lot, date_peremption, lieu_vaccination, date_vaccination, heure_vaccination, site, dose, season) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        $stmt_vaccination = $conn->prepare($sql_vaccination);
-        $stmt_vaccination->bind_param("sssssssss", $vaccin, $lot, $peremption, $lieuvac, $datevac, $heurevac, $site, $dose, $season);
-        $stmt_vaccination->execute();
-
-        // Get the inserted vaccination's ID
-        $vaccination_id = $conn->insert_id;
-
-        // Insert into Patient_Vaccination association table
-        $sql_patient_vaccination = "INSERT INTO Patient_Vaccination (id_patient, id_vaccination) VALUES (?, ?)";
-        $stmt_patient_vaccination = $conn->prepare($sql_patient_vaccination);
-        $stmt_patient_vaccination->bind_param("si", $idnum, $vaccination_id);
-        $stmt_patient_vaccination->execute();
-
-        // Insert selected antecedents into Patient_Maladie_Chronique association table
-        foreach ($antecedents as $antecedent) {
-            $sql_maladie = "SELECT id_maladie FROM Maladie_Chronique WHERE nom = ?";
-            $stmt_maladie = $conn->prepare($sql_maladie);
-            $stmt_maladie->bind_param("s", $antecedent);
-            $stmt_maladie->execute();
-            $result_maladie = $stmt_maladie->get_result();
-            if ($result_maladie->num_rows > 0) {
-                $row = $result_maladie->fetch_assoc();
-                $maladie_id = $row['id_maladie'];
-
-                $sql_patient_maladie = "INSERT INTO Patient_Maladie_Chronique (id_patient, id_maladie) VALUES (?, ?)";
-                $stmt_patient_maladie = $conn->prepare($sql_patient_maladie);
-                $stmt_patient_maladie->bind_param("is", $idnum, $maladie_id);
-                $stmt_patient_maladie->execute();
-            }
-        }
-
-        // Insert new antecedents into Maladie_Chronique table and store them in session
-        $new_antecedents_ids = [];
-        foreach ($new_antecedents as $new_antecedent) {
-            if (!empty($new_antecedent)) {
-                $sql_new_maladie = "INSERT INTO Maladie_Chronique (nom) VALUES (?)";
-                $stmt_new_maladie = $conn->prepare($sql_new_maladie);
-                $stmt_new_maladie->bind_param("s", $new_antecedent);
-                $stmt_new_maladie->execute();
-
-                $new_maladie_id = $conn->insert_id;
-                $new_antecedents_ids[] = $new_maladie_id;
-
-                // Insert into Patient_Maladie_Chronique association table
-                $sql_patient_new_maladie = "INSERT INTO Patient_Maladie_Chronique (id_patient, id_maladie) VALUES (?, ?)";
-                $stmt_patient_new_maladie = $conn->prepare($sql_patient_new_maladie);
-                $stmt_patient_new_maladie->bind_param("is", $idnum, $new_maladie_id);
-                $stmt_patient_new_maladie->execute();
-            }
-        }
-
-        $conn->commit();
-
-        $_SESSION['patient_info'] = [
-            'idnum' => $idnum,
-            'name' => $name,
-            'gender' => $gender,
-            'age' => $age,
-            'adresse' => $adresse,
-            'tel' => $tel,
-            'vaccin' => $vaccin,
-            'lot' => $lot,
-            'peremption' => $peremption,
-            'lieuvac' => $lieuvac,
-            'datevac' => $datevac,
-            'heurevac' => $heurevac,
-            'site' => $site,
-            'dose' => $dose,
-            'antecedents' => array_merge($antecedents, $new_antecedents),
-            'atc' => $antecedents_string,
-            'season' => $season
-        ];
-
-        $_SESSION['success_message'] = "Patient information inserted successfully";
-        header("Location: ./inserted_patient_info.php");
-        exit();
-    
-    } catch (Exception $e) {
-        $conn->rollback();
-        echo '<script>alert("Insertion unsuccessful: ' . htmlspecialchars($exception->getMessage()) . '"); window.location="./add_patient.php";</script>';
-        exit();
-    } finally {
-        $stmt_patient->close();
-        $stmt_vaccination->close();
-        $stmt_patient_vaccination->close();
-        if (!empty($new_antecedents_ids)) {
-            $stmt_new_maladie->close();
-            $stmt_patient_new_maladie->close();
-        }
-        $conn->close();
-    }
-} else {
-    header('Location: ./add_patient.php');
-    exit();
+if (in_array('', [$idnum, $name, $gender, $age, $adresse, $tel, $vaccin, $lot, $peremption, $lieuvac, $datevac, $heurevac, $site, $dose], true)) {
+    $_SESSION['error_message'] = 'err_required'; header('Location: add_patient.php'); exit;
 }
+$validDate = fn($d) => ($x = DateTime::createFromFormat('Y-m-d', $d)) && $x->format('Y-m-d') === $d;
+$bad = !ctype_digit($idnum) || strlen($idnum) > 20 || !ctype_digit($age) || (int)$age > 120
+    || !in_array($gender, ['Male', 'Female'], true) || !in_array($vaccin, ['Astra Zeneca', 'Sinopharm', 'Sputnik-v-', 'Sinovac'], true)
+    || !in_array($dose, ['1st', '2nd'], true) || !in_array($site, ['right', 'left'], true)
+    || !$validDate($peremption) || !$validDate($datevac) || !preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $heurevac)
+    || mb_strlen($name) > 100 || mb_strlen($adresse) > 200 || !preg_match('/^[0-9+\s().-]{6,20}$/', $tel) || mb_strlen($lot) > 50;
+if ($bad) { $_SESSION['error_message'] = 'err_invalid'; header('Location: add_patient.php'); exit; }
+$antecedents = array_slice(array_map(fn($x) => mb_substr($x, 0, 60), $antecedents), 0, 30);
+$new_antecedents = array_slice(array_map(fn($x) => mb_substr($x, 0, 60), $new_antecedents), 0, 10);
+if (!in_array($lieuvac, vaccination_sites(), true)) { $_SESSION['error_message'] = 'err_location'; header('Location: add_patient.php'); exit; }
+$season = getSeason($datevac);
+
+$st = $conn->prepare("SELECT id_patient FROM Patient WHERE id_patient = ?");
+$st->bind_param('s', $idnum); $st->execute(); $st->store_result();
+if ($st->num_rows > 0) { $_SESSION['error_message'] = 'err_id_exists'; header('Location: add_patient.php'); exit; }
+$st->close();
+
+$conn->begin_transaction();
+try {
+    $st = $conn->prepare("INSERT INTO Patient (id_patient, nom, age, sexe, adresse, tel) VALUES (?, ?, ?, ?, ?, ?)");
+    $st->bind_param('ssisss', $idnum, $name, $age, $gender, $adresse, $tel); $st->execute();
+
+    $st = $conn->prepare("INSERT INTO Vaccination (type_vaccin, num_lot, date_peremption, lieu_vaccination, date_vaccination, heure_vaccination, site, dose, season) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $st->bind_param('sssssssss', $vaccin, $lot, $peremption, $lieuvac, $datevac, $heurevac, $site, $dose, $season); $st->execute();
+    $vaccination_id = $conn->insert_id;
+
+    $st = $conn->prepare("INSERT INTO Patient_Vaccination (id_patient, id_vaccination) VALUES (?, ?)");
+    $st->bind_param('si', $idnum, $vaccination_id); $st->execute();
+
+    $link = $conn->prepare("INSERT INTO Patient_Maladie_Chronique (id_patient, id_maladie) VALUES (?, ?)");
+    $find = $conn->prepare("SELECT id_maladie FROM Maladie_Chronique WHERE nom = ?");
+    $ins  = $conn->prepare("INSERT INTO Maladie_Chronique (nom) VALUES (?)");
+    $done = [];
+    foreach (array_merge($antecedents, $new_antecedents) as $nom) {       // selected + newly typed conditions
+        if (isset($done[mb_strtolower($nom)])) continue; $done[mb_strtolower($nom)] = 1;
+        $find->bind_param('s', $nom); $find->execute(); $r = $find->get_result()->fetch_assoc();
+        if ($r) { $mid = (int)$r['id_maladie']; }
+        else { $ins->bind_param('s', $nom); $ins->execute(); $mid = $conn->insert_id; }
+        $link->bind_param('si', $idnum, $mid); $link->execute();           // patient id is a string, condition id an int
+    }
+    $conn->commit();
+} catch (Throwable $e) {
+    $conn->rollback();
+    error_log('add_patient failed: ' . $e->getMessage());
+    $_SESSION['error_message'] = 'err_generic'; header('Location: add_patient.php'); exit;
+}
+
+$_SESSION['patient_info'] = ['idnum'=>$idnum,'name'=>$name,'gender'=>$gender,'age'=>$age,'adresse'=>$adresse,'tel'=>$tel,'vaccin'=>$vaccin,'lot'=>$lot,
+    'peremption'=>$peremption,'lieuvac'=>$lieuvac,'datevac'=>$datevac,'heurevac'=>$heurevac,'site'=>$site,'dose'=>$dose,
+    'antecedents'=>array_values(array_unique(array_merge($antecedents, $new_antecedents))),'atc'=>implode(',', array_unique(array_merge($antecedents, $new_antecedents))),'season'=>$season];
+$_SESSION['success_message'] = 'ok_added';
+header('Location: inserted_patient_info.php'); exit;
 
 function getSeason($date) {
-    $month = date('n', strtotime($date));
-    if ($month >= 3 && $month <= 5) {
-        return 'Spring';
-    } elseif ($month >= 6 && $month <= 8) {
-        return 'Summer';
-    } elseif ($month >= 9 && $month <= 11) {
-        return 'Autumn';
-    } else {
-        return 'Winter';
-    }
+    $m = (int)date('n', strtotime($date));
+    return $m >= 3 && $m <= 5 ? 'Spring' : ($m >= 6 && $m <= 8 ? 'Summer' : ($m >= 9 && $m <= 11 ? 'Autumn' : 'Winter'));
 }
-?>

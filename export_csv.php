@@ -1,10 +1,9 @@
 <?php
-session_start();
+require __DIR__ . '/includes/bootstrap.php';
+require_login();
 
-if (!isset($_SESSION['username'])) {
-    header("Location: doctors_login.php");
-    exit();
-}
+// Neutralise spreadsheet formulas (=, +, @ ...) so exported text can't run in Excel.
+function csv_safe($v){ $v = (string)$v; return ($v !== '' && strpbrk($v[0], "=+-@\t\r") !== false && !preg_match('/^[+-]?[0-9][0-9 .\-]*$/', $v)) ? "'" . $v : $v; }
 
 $content = fopen('php://temp', 'r+');
 $headers = ['National ID', 'Name', 'Gender', 'Age', 'Address', 'Phone Number', 'Vaccine Name', 'Batch Number', 'Expiration Date', 'Vaccination Location', 'Vaccination Date', 'Vaccination Time', 'Administration Site', 'Dose', 'Antecedents and Terrain', 'Side Effects', 'Date d\'ajout', 'Season of vaccination'];
@@ -44,32 +43,33 @@ $result = mysqli_query($conn, $sql);
 if (mysqli_num_rows($result) > 0) {
     while ($row = mysqli_fetch_assoc($result)) {
         $rowData = [
-            utf8_decode($row['id_patient']),
-            utf8_decode($row['nom']),
-            utf8_decode($row['sexe']),
-            utf8_decode($row['age']),
-            utf8_decode($row['adresse']),
-            utf8_decode($row['tel']),
-            utf8_decode($row['type_vaccin']),
-            utf8_decode($row['num_lot']),
-            utf8_decode($row['date_peremption']),
-            utf8_decode($row['lieu_vaccination']),
-            utf8_decode($row['date_vaccination']),
-            utf8_decode($row['heure_vaccination']),
-            utf8_decode($row['site']),
-            utf8_decode($row['dose']),
-            utf8_decode($row['antecedents'] ?: 'No Background'),
-            utf8_decode($row['side_effects']),
-            utf8_decode($row['createdate']),
-            utf8_decode($row['season']),
+            $row['id_patient'],
+            $row['nom'],
+            $row['sexe'],
+            $row['age'],
+            $row['adresse'],
+            $row['tel'],
+            $row['type_vaccin'],
+            $row['num_lot'],
+            $row['date_peremption'],
+            $row['lieu_vaccination'],
+            $row['date_vaccination'],
+            $row['heure_vaccination'],
+            $row['site'],
+            $row['dose'],
+            $row['antecedents'] ?: 'No Background',
+            $row['side_effects'],
+            $row['createdate'],
+            $row['season'],
         ];
-        fputcsv($content, $rowData);
+        fputcsv($content, array_map('csv_safe', $rowData));
     }
 }
 
-header('Content-Type: application/csv; charset=ISO-8859-1');
+header('Content-Type: text/csv; charset=UTF-8');
 header('Content-Disposition: attachment; filename="patients.csv"');
 
+echo "\xEF\xBB\xBF";
 rewind($content);
 fpassthru($content);
 fclose($content);

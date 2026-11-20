@@ -5,7 +5,7 @@ $rows=$conn->query("SELECT p.id_patient,p.nom,p.sexe,p.age,p.createdate,v.type_v
 $top=$conn->query("SELECT es.description d,COUNT(*) c FROM Vaccination_Effet_Secondaire ves JOIN Effet_Secondaire es ON es.id_effet=ves.id_effet GROUP BY es.description ORDER BY c DESC LIMIT 6")->fetch_all(MYSQLI_ASSOC);
 $vac=[];$rep=0;foreach($rows as $r){$vac[$r['type_vaccin']?:'Unknown']=($vac[$r['type_vaccin']?:'Unknown']??0)+1;if($r['effects'])$rep++;}
 $total=count($rows);$max=max(array_column($top,'c')?:[1]);
-open_page('Patients','app','list','Patients','<a class="btn sm ghost" href="export_csv.php">'.icon('down').'Export CSV</a> <a class="btn sm" href="add_patient.php">'.icon('plus').'New patient</a>'); ?>
+open_page('Patients','app','list','Patients','<a class="btn sm ghost" href="export_csv.php">'.icon('down').'Export CSV</a> <a class="btn sm ghost" href="export_xlsx.php">'.icon('down').'Export Excel</a> <a class="btn sm" href="add_patient.php">'.icon('plus').'New patient</a>'); ?>
 <div class="kpis"><div class="card kpi"><b><?=$total?></b><span>Patients registered</span></div>
 <div class="card kpi"><b><?=$rep?></b><span>With side effects reported</span></div>
 <div class="card kpi"><b><?=$total?round($rep/$total*100):0?>%</b><span>Follow-up completed</span></div>

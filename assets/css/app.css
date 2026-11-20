@@ -62,3 +62,9 @@ td{padding:14px;border-bottom:1px solid var(--line);vertical-align:top}tr:hover 
 .meter{height:12px;border-radius:9px;background:var(--bg);overflow:hidden}.meter i{display:block;height:100%;border-radius:9px;background:var(--c,var(--brand))}.rank .pct{font:700 1.2rem 'Sora',sans-serif;text-align:right}
 .lo{--c:var(--ok)}.mid{--c:var(--warn)}.hi{--c:var(--coral)}@media(max-width:600px){.rank li{grid-template-columns:1fr 54px}.rank .meter{grid-column:1/-1;order:3}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+
+/* prediction history + loading overlay (patient page) */
+.busy{position:fixed;inset:0;display:none;place-items:center;background:rgba(14,13,31,.6);backdrop-filter:blur(3px);z-index:60;color:#fff;text-align:center;padding:24px}.busy.on{display:grid}
+.spin{width:44px;height:44px;border:4px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;margin:0 auto 14px;animation:vaxspin .8s linear infinite}@keyframes vaxspin{to{transform:rotate(360deg)}}
+details.pred{border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-top:10px}details.pred summary{cursor:pointer;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:.9rem}details.pred .bars{margin-top:10px}
+@media(prefers-reduced-motion:reduce){.spin{animation-duration:2.4s}}
