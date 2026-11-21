@@ -23,5 +23,5 @@ open_page('Patients','app','list','Patients','<a class="btn sm ghost" href="expo
 <p class="muted small" style="margin:12px 0 0"><span id="count"><?=$total?></span> patient(s) affiché(s)</p></div>
 <div class="card"><h3><?=ti('bar')?>Effets secondaires les plus déclarés</h3><?php if($top): ?><ul class="bars"><?php foreach($top as $t): ?><li><span><?=h(td($t['d']))?></span><span class="t"><i style="width:<?=round($t['c']/$max*100)?>%"></i></span><b><?=$t['c']?></b></li><?php endforeach; ?></ul>
 <?php else: ?><p class="muted small">Les graphiques apparaissent dès que des effets secondaires sont déclarés.</p><?php endif; ?></div></div>
-<script src="assets/js/app.js"></script>
+<script src="<?= asset('assets/js/app.js') ?>"></script>
 <?php close_page('app'); ?>

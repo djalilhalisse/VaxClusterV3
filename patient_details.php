@@ -32,5 +32,5 @@ open_page($p['nom'],'app','list',$p['nom'],'<a class="btn sm ghost" href="patien
 <ul class="bars"><?php foreach(array_slice($avg,0,8,true) as $e=>$v): ?><li><span><?=h(td($e))?></span><span class="t"><i style="width:<?=min(100,$v*2)?>%"></i></span><b><?=$v?></b></li><?php endforeach; ?></ul></details>
 <?php endforeach; ?></div></div></div>
 <div class="busy" id="busy" role="status" aria-live="polite"><div><div class="spin"></div><p>Exécution des trois modèles… cela peut prendre un moment.</p></div></div>
-<script src="assets/js/app.js"></script>
+<script src="<?= asset('assets/js/app.js') ?>"></script>
 <?php close_page('app'); ?>

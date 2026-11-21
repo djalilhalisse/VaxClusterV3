@@ -15,6 +15,8 @@ if (!headers_sent()) {
     if ($https) header('Strict-Transport-Security: max-age=31536000');
     if (!empty($_SESSION['username'])) header('Cache-Control: no-store');   // patient data must not be cached by the browser
 }
+// Versioned asset URL: ?v=<hash of the file>. A changed file gets a new URL, so browsers never show stale CSS/JS/images.
+function asset($p){ static $c = []; if (!isset($c[$p])) { $f = __DIR__ . '/../' . $p; $c[$p] = is_file($f) ? $p . '?v=' . substr(md5_file($f), 0, 10) : $p; } return $c[$p]; }
 function nonce(){ global $NONCE; return $NONCE; }
 function client_ip(){ $x = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? ''; return $x ? trim(explode(',', $x)[0]) : ($_SERVER['REMOTE_ADDR'] ?? '?'); }
 // Simple file-based rate limit (per key), good enough for a single-instance deployment.
@@ -106,12 +108,12 @@ function open_page($title, $mode = 'public', $active = '', $heading = '', $actio
 <!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title><?= h($title) ?> - VaxCluster</title><meta name="color-scheme" content="light dark"><meta name="theme-color" content="#2563eb">
 <meta name="description" content="VaxCluster : prédiction des effets secondaires des vaccins contre la COVID-19 par clustering.">
-<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="alternate icon" href="favicon.ico" sizes="any"><link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="<?= asset('favicon.svg') ?>" type="image/svg+xml"><link rel="alternate icon" href="<?= asset('favicon.ico') ?>" sizes="any"><link rel="apple-touch-icon" href="<?= asset('apple-touch-icon.png') ?>">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Sora:wght@600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/app.css">
+<link rel="stylesheet" href="<?= asset('assets/css/app.css') ?>">
 <script nonce="<?= nonce() ?>">try{if(localStorage.getItem('vaxSide')==='1')document.documentElement.classList.add('side-min')}catch(e){}</script>
-<script src="assets/js/ui.js" defer></script></head><body>
+<script src="<?= asset('assets/js/ui.js') ?>" defer></script></head><body>
 <?php if ($mode === 'app'): $nav = ['list'=>['patients_list.php','users','Patients'],'add'=>['add_patient.php','userplus','Nouveau patient'],'report'=>['patient_form.php','clip','Effets secondaires'],'csv'=>['export_csv.php','down','Exporter en CSV'],'xlsx'=>['export_xlsx.php','table','Exporter en Excel']]; ?>
 <div class="shell"><aside class="side"><div class="side-head"><?= logo() ?><button type="button" class="coll" id="coll" aria-label="Réduire le menu" aria-expanded="true" title="Réduire / agrandir le menu"><?= icon('panel') ?></button></div>
 <?php foreach ($nav as $k => $n): ?><a class="n <?= $active === $k ? 'on' : '' ?>" href="<?= $n[0] ?>" title="<?= h($n[2]) ?>"><?= icon($n[1]) ?><span class="lb"><?= h($n[2]) ?></span></a><?php endforeach; ?>
@@ -124,9 +126,9 @@ function open_page($title, $mode = 'public', $active = '', $heading = '', $actio
 <?php if (!empty($_SESSION['username'])): ?><a class="btn sm" href="patients_list.php"><?= icon('bar') ?>Tableau de bord</a><?php else: ?><a class="btn sm" href="doctors_login.php"><?= icon('login') ?>Connexion médecin</a><?php endif; ?></div></nav>
 <?php endif; }
 function close_page($mode = 'public'){
-  if ($mode === 'app') { ?><div class="grow"></div><footer class="app-foot"><img src="images/Logo_EPSP_Annaba.png" alt="Logo de l’EPSP Annaba"><span><b>VaxCluster</b> · Projet de fin d’études de Master (2024) de <b>Abdeldjalil Halisse</b>, réalisé lors d’un stage à l’<b>EPSP Annaba</b>.</span></footer></div></div><?php }
+  if ($mode === 'app') { ?><div class="grow"></div><footer class="app-foot"><img src="<?= asset('images/Logo_EPSP_Annaba.png') ?>" alt="Logo de l’EPSP Annaba"><span><b>VaxCluster</b> · Projet de fin d’études de Master (2024) de <b>Abdeldjalil Halisse</b>, réalisé lors d’un stage à l’<b>EPSP Annaba</b>.</span></footer></div></div><?php }
   else { ?><footer class="foot"><div class="wrap"><div class="grid2">
-<div class="foot-logos"><img class="round" src="images/Logo_EPSP_Annaba.png" alt="Logo de l’EPSP Annaba"><img class="sq" src="images/Badji_Mokhtar_-_Annaba_University_Logo.png" alt="Université Badji Mokhtar Annaba"><img class="sq" src="images/Logo_LRI.png" alt="Laboratoire LRI"></div>
+<div class="foot-logos"><img class="round" src="<?= asset('images/Logo_EPSP_Annaba.png') ?>" alt="Logo de l’EPSP Annaba"><img class="sq" src="<?= asset('images/Badji_Mokhtar_-_Annaba_University_Logo.png') ?>" alt="Université Badji Mokhtar Annaba"><img class="sq" src="<?= asset('images/Logo_LRI.png') ?>" alt="Laboratoire LRI"></div>
 <div><p class="foot-t"><?= icon('syringe') ?>VaxCluster · Projet de fin d’études de Master, 2024</p>
 <p>Conçu et développé par <b>Abdeldjalil Halisse</b> dans le cadre de son projet de fin d’études de Master, réalisé lors d’un stage au sein de l’<b>EPSP Annaba</b> (Établissement Public de Santé de Proximité).</p>
 <p>Université Badji Mokhtar – Annaba · Département d’informatique · Laboratoire LRI.</p>
