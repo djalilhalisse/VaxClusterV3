@@ -7,21 +7,21 @@ open_page('Nouveau patient','app','add'); ?>
 <form id="f" action="add_patient_action.php" method="post"><?=csrf_field()?>
 <div class="step on"><div class="field"><label for="idnum"><?=icon('file')?>Numéro d’identité nationale</label><input id="idnum" name="idnum" inputmode="numeric" maxlength="20" pattern="[0-9]+" required></div>
 <div class="field"><label for="name"><?=icon('user')?>Nom complet</label><input id="name" name="name" required></div>
-<div class="two"><div class="field"><label for="gender"><?=icon('users')?>Sexe</label><select id="gender" name="gender" required><option value="">Choisir</option><option value="Male">Homme</option><option value="Female">Femme</option></select></div>
-<div class="field"><label for="age"><?=icon('calendar')?>Âge</label><input id="age" name="age" type="number" min="0" max="120" required></div></div>
+<div class="two"><div class="field"><label for="gender"><?=icon('users')?>Sexe</label><select class="ui" id="gender" name="gender" required><option value="">Choisir</option><option value="Male">Homme</option><option value="Female">Femme</option></select></div>
+<div class="field"><label for="age"><?=icon('calendar')?>Âge</label><input class="ui" id="age" name="age" type="number" min="0" max="120" required></div></div>
 <div class="field"><label for="adresse"><?=icon('pin')?>Adresse</label><input id="adresse" name="adresse" required></div>
 <div class="field"><label for="tel"><?=icon('phone')?>Téléphone</label><input id="tel" name="tel" type="tel" required></div></div>
-<div class="step"><div class="two"><div class="field"><label for="vaccin"><?=icon('syringe')?>Vaccin</label><select id="vaccin" name="vaccin" required><option value="">Choisir</option><?php foreach(['Astra Zeneca','Sinopharm','Sputnik-v-','Sinovac'] as $x) echo '<option value="'.h($x).'">'.h(td($x)).'</option>'; ?></select></div>
-<div class="field"><label for="dose"><?=icon('layers')?>Dose</label><select id="dose" name="dose" required><option value="">Choisir</option><option value="1st">1re injection</option><option value="2nd">2e injection</option></select></div></div>
+<div class="step"><div class="two"><div class="field"><label for="vaccin"><?=icon('syringe')?>Vaccin</label><select class="ui" id="vaccin" name="vaccin" required><option value="">Choisir</option><?php foreach(['Astra Zeneca','Sinopharm','Sputnik-v-','Sinovac'] as $x) echo '<option value="'.h($x).'">'.h(td($x)).'</option>'; ?></select></div>
+<div class="field"><label for="dose"><?=icon('layers')?>Dose</label><select class="ui" id="dose" name="dose" required><option value="">Choisir</option><option value="1st">1re injection</option><option value="2nd">2e injection</option></select></div></div>
 <div class="two"><div class="field"><label for="numlot"><?=icon('file')?>Numéro de lot</label><input id="numlot" name="numlot" required></div>
-<div class="field"><label for="dateperemp"><?=icon('calendar')?>Date de péremption</label><input id="dateperemp" name="dateperemp" type="date" required></div></div>
-<div class="two"><div class="field"><label for="datevac"><?=icon('calendar')?>Date de vaccination</label><input id="datevac" name="datevac" type="date" value="<?=date('Y-m-d')?>" required></div>
-<div class="field"><label for="timevac"><?=icon('history')?>Heure</label><input id="timevac" name="timevac" type="time" required></div></div>
-<div class="two"><div class="field"><label for="lieuvac"><?=icon('pin')?>Lieu de vaccination</label><select id="lieuvac" name="lieuvac" required><option value="">Choisir</option><?php foreach(vaccination_sites() as $x) echo '<option>'.h($x).'</option>'; ?></select></div>
-<div class="field"><label for="Site"><?=icon('hand')?>Site d’injection</label><select id="Site" name="Site" required><option value="">Choisir</option><option value="right">Bras droit</option><option value="left">Bras gauche</option></select></div></div></div>
+<div class="field"><label for="dateperemp"><?=icon('calendar')?>Date de péremption</label><input class="ui" id="dateperemp" name="dateperemp" type="date" required></div></div>
+<div class="two"><div class="field"><label for="datevac"><?=icon('calendar')?>Date de vaccination</label><input class="ui" id="datevac" name="datevac" type="date" value="<?=date('Y-m-d')?>" required></div>
+<div class="field"><label for="timevac"><?=icon('history')?>Heure</label><input class="ui" id="timevac" name="timevac" type="time" required></div></div>
+<div class="two"><div class="field"><label for="lieuvac"><?=icon('pin')?>Lieu de vaccination</label><select class="ui" id="lieuvac" name="lieuvac" required><option value="">Choisir</option><?php foreach(vaccination_sites() as $x) echo '<option>'.h($x).'</option>'; ?></select></div>
+<div class="field"><label for="Site"><?=icon('hand')?>Site d’injection</label><select class="ui" id="Site" name="Site" required><option value="">Choisir</option><option value="right">Bras droit</option><option value="left">Bras gauche</option></select></div></div></div>
 <div class="step"><p class="muted small">Sélectionnez toutes les pathologies concernées. « Aucun antécédent » se décoche dès que vous en choisissez une autre.</p>
 <div class="chips" id="hist"><?php while($r=$hist->fetch_assoc()): $n=$r['nom']; ?><label><input type="checkbox" name="antecedents[]" value="<?=h($n)?>" <?=$n==='No Background'?'checked':''?>><span><?=h(td($n))?></span></label><?php endwhile; ?></div>
-<div class="field" style="margin-top:22px"><label for="na">Autre pathologie (facultatif)</label><input id="na" name="new_antecedents[]"></div></div>
+<div class="field" style="margin-top:22px"><label for="na">Autres pathologies (facultatif)</label><?=multi_input('new_antecedents[]','Ex. : hypothyroïdie','na')?></div></div>
 <div class="actions"><button type="button" class="btn ghost" id="back"><?=icon('back')?>Retour</button><button type="button" class="btn" id="next">Continuer</button></div>
 </form></div>
 <script nonce="<?= nonce() ?>">

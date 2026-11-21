@@ -101,6 +101,8 @@ function icon($n){ static $p = [
 }
 // round icon "bubble" placed before titles
 function ti($n){ return '<span class="ti">'.icon($n).'</span>'; }
+// Repeatable text field: pickers.js turns the "+" into an add-row button and gives added rows a "−" remove button.
+function multi_input($name, $placeholder = '', $id = ''){ return '<div class="multi"><div class="mrow"><input' . ($id ? ' id="' . h($id) . '"' : '') . ' name="' . h($name) . '" placeholder="' . h($placeholder) . '" autocomplete="off" maxlength="60"><button type="button" class="mpl" aria-label="Ajouter une ligne" title="Ajouter une ligne">+</button></div></div>'; }
 function logo(){ return '<a class="logo" href="index.php"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="9" cy="10" r="5" fill="#2563eb"/><circle cx="19" cy="9" r="4" fill="#ff6a55"/><circle cx="15" cy="20" r="5" fill="#12b886"/></svg><span>VaxCluster</span></a>'; }
 function open_page($title, $mode = 'public', $active = '', $heading = '', $actions = '', $ic = null){
   $icons = ['list'=>'users','add'=>'userplus','report'=>'clip'];
@@ -113,7 +115,7 @@ function open_page($title, $mode = 'public', $active = '', $heading = '', $actio
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Sora:wght@600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="<?= asset('assets/css/app.css') ?>">
 <script nonce="<?= nonce() ?>">try{if(localStorage.getItem('vaxSide')==='1')document.documentElement.classList.add('side-min')}catch(e){}</script>
-<script src="<?= asset('assets/js/ui.js') ?>" defer></script></head><body>
+<script src="<?= asset('assets/js/ui.js') ?>" defer></script><script src="<?= asset('assets/js/pickers.js') ?>" defer></script></head><body>
 <?php if ($mode === 'app'): $nav = ['list'=>['patients_list.php','users','Patients'],'add'=>['add_patient.php','userplus','Nouveau patient'],'report'=>['patient_form.php','clip','Effets secondaires'],'csv'=>['export_csv.php','down','Exporter en CSV'],'xlsx'=>['export_xlsx.php','table','Exporter en Excel']]; ?>
 <div class="shell"><aside class="side"><div class="side-head"><?= logo() ?><button type="button" class="coll" id="coll" aria-label="Réduire le menu" aria-expanded="true" title="Réduire / agrandir le menu"><?= icon('panel') ?></button></div>
 <?php foreach ($nav as $k => $n): ?><a class="n <?= $active === $k ? 'on' : '' ?>" href="<?= $n[0] ?>" title="<?= h($n[2]) ?>"><?= icon($n[1]) ?><span class="lb"><?= h($n[2]) ?></span></a><?php endforeach; ?>

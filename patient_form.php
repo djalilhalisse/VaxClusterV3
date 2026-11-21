@@ -8,8 +8,8 @@ open_page('Déclarer des effets secondaires',$mode,'report'); if($mode==='public
 <div class="field"><label for="idnum"><?=icon('file')?>Numéro d’identité nationale</label><input id="idnum" name="idnum" inputmode="numeric" maxlength="20" pattern="[0-9]+" value="<?=h($_GET['id']??'')?>" required></div>
 <div class="field"><span class="lbl"><?=icon('thermo')?>Effets secondaires ressentis</span><div class="chips">
 <?php while($r=$fx->fetch_assoc()): ?><label><input type="checkbox" name="side_effects[]" value="<?=h($r['description'])?>"><span><?=h(td($r['description']))?></span></label><?php endwhile; ?></div></div>
-<div class="field"><label for="other">Autre effet secondaire (facultatif)</label><input id="other" name="side_effects[]" placeholder="Saisissez un effet secondaire non listé ci-dessus"></div>
-<div class="two"><div class="field"><label for="dateappar"><?=icon('calendar')?>Date d’apparition</label><input id="dateappar" name="dateappar" type="date" max="<?=date('Y-m-d')?>" required></div>
-<div class="field"><label for="dureemanif"><?=icon('history')?>Durée (en jours)</label><input id="dureemanif" name="dureemanif" type="number" min="1" required></div></div>
+<div class="field"><label for="other">Autres effets secondaires (facultatif)</label><?=multi_input('side_effects[]','Saisissez un effet secondaire non listé ci-dessus','other')?></div>
+<div class="two"><div class="field"><label for="dateappar"><?=icon('calendar')?>Date d’apparition</label><input class="ui" id="dateappar" name="dateappar" type="date" max="<?=date('Y-m-d')?>" required></div>
+<div class="field"><label for="dureemanif"><?=icon('history')?>Durée (en jours)</label><input class="ui" id="dureemanif" name="dureemanif" type="number" min="1" required></div></div>
 <button class="btn" name="btn_submit"><?=icon('check')?>Enregistrer la déclaration</button></form></div></div>
 <?php close_page($mode); ?>

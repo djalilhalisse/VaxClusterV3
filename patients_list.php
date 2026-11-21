@@ -10,8 +10,8 @@ open_page('Patients','app','list','Patients','<a class="btn sm ghost" href="expo
 <div class="card kpi"><span class="ki"><?=icon('activity')?></span><b><?=$rep?></b><span>Avec effets secondaires déclarés</span></div>
 <div class="card kpi"><span class="ki"><?=icon('check')?></span><b><?=$total?round($rep/$total*100):0?>%</b><span>Suivi complété</span></div>
 <div class="card kpi"><span class="ki"><?=icon('syringe')?></span><b class="<?=mb_strlen($vtop)>8?'sm':''?>"><?=h($vtop)?></b><span>Vaccin le plus utilisé</span></div></div>
-<div class="cols"><div class="card"><div class="tools"><input id="q" type="search" placeholder="Rechercher un patient…" aria-label="Rechercher par nom, identifiant ou effet secondaire">
-<select id="vf" aria-label="Filtrer par vaccin"><option value="">Tous les vaccins</option><?php foreach(array_keys($vac) as $v) echo '<option value="'.h($v).'">'.h(td($v)).'</option>'; ?></select></div>
+<div class="cols"><div class="card"><div class="tools"><input class="ui" id="q" type="search" placeholder="Rechercher un patient…" aria-label="Rechercher par nom, identifiant ou effet secondaire">
+<select class="ui" id="vf" data-all="1" aria-label="Filtrer par vaccin"><option value="">Tous les vaccins</option><?php foreach(array_keys($vac) as $v) echo '<option value="'.h($v).'">'.h(td($v)).'</option>'; ?></select></div>
 <div class="tw"><table id="pt"><thead><tr><th>Patient</th><th>Âge</th><th>Vaccin</th><th>Effets secondaires</th><th>Ajouté le</th></tr></thead><tbody>
 <?php foreach($rows as $r): $fx=$r['effects']?explode('|',$r['effects']):[]; $vn=$r['type_vaccin']?:'Inconnu'; ?>
 <tr data-v="<?=h($vn)?>" data-s="<?=h(mb_strtolower($r['id_patient'].' '.$r['nom'].' '.implode(' ',$fx).' '.implode(' ',array_map('td',$fx))))?>">
