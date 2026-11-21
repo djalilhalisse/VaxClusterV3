@@ -1,5 +1,5 @@
 <?php
-// Excel (.xlsx) export of all patients: a styled "Patients" sheet plus a "Summary" sheet.
+// Export Excel (.xlsx) de tous les patients : une feuille « Patients » mise en forme et une feuille « Synthèse ».
 require __DIR__ . '/includes/bootstrap.php';
 require_login();
 session_write_close();
@@ -7,7 +7,7 @@ session_write_close();
 require __DIR__ . '/configuration/db_connection.php';
 require __DIR__ . '/includes/xlsx.php';
 
-// "|" separates list items so values containing commas stay intact.
+// « | » sépare les éléments des listes pour préserver les virgules des valeurs.
 $sql = "SELECT
             Patient.id_patient, Patient.nom, Patient.sexe, Patient.age, Patient.adresse, Patient.tel,
             Vaccination.type_vaccin, Vaccination.num_lot, Vaccination.date_peremption, Vaccination.lieu_vaccination,
@@ -29,7 +29,7 @@ $result = mysqli_query($conn, $sql);
 if ($result === false) {
     error_log('XLSX export query failed: ' . mysqli_error($conn));
     http_response_code(500);
-    die('Export failed.');
+    die('L’export a échoué.');
 }
 $rows = [];
 while ($row = mysqli_fetch_assoc($result)) { $rows[] = $row; }

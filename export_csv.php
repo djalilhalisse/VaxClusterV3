@@ -6,8 +6,10 @@ require_login();
 function csv_safe($v){ $v = (string)$v; return ($v !== '' && strpbrk($v[0], "=+-@\t\r") !== false && !preg_match('/^[+-]?[0-9][0-9 .\-]*$/', $v)) ? "'" . $v : $v; }
 
 $content = fopen('php://temp', 'r+');
-$headers = ['National ID', 'Name', 'Gender', 'Age', 'Address', 'Phone Number', 'Vaccine Name', 'Batch Number', 'Expiration Date', 'Vaccination Location', 'Vaccination Date', 'Vaccination Time', 'Administration Site', 'Dose', 'Antecedents and Terrain', 'Side Effects', 'Date d\'ajout', 'Season of vaccination'];
-fputcsv($content, $headers);
+$headers = ['Numéro d’identité', 'Nom', 'Sexe', 'Âge', 'Adresse', 'Téléphone', 'Vaccin', 'Numéro de lot', 'Date de péremption', 'Lieu de vaccination', 'Date de vaccination', 'Heure de vaccination', 'Site d’injection', 'Dose', 'Antécédents médicaux', 'Effets secondaires', 'Date d’ajout', 'Saison de vaccination'];
+// Excel en français attend « ; » comme séparateur de colonnes
+$tl = function ($v) { return $v === null || $v === '' ? '' : implode(', ', array_map('td', explode(', ', $v))); };
+fputcsv($content, $headers, ';');
 
 require('./configuration/db_connection.php');
 $sql = "SELECT 
@@ -45,29 +47,29 @@ if (mysqli_num_rows($result) > 0) {
         $rowData = [
             $row['id_patient'],
             $row['nom'],
-            $row['sexe'],
+            td($row['sexe']),
             $row['age'],
             $row['adresse'],
             $row['tel'],
-            $row['type_vaccin'],
+            td($row['type_vaccin']),
             $row['num_lot'],
-            $row['date_peremption'],
+            fdate($row['date_peremption']),
             $row['lieu_vaccination'],
-            $row['date_vaccination'],
+            fdate($row['date_vaccination']),
             $row['heure_vaccination'],
-            $row['site'],
-            $row['dose'],
-            $row['antecedents'] ?: 'No Background',
-            $row['side_effects'],
-            $row['createdate'],
-            $row['season'],
+            td($row['site']),
+            td($row['dose']),
+            $tl($row['antecedents']) ?: 'Aucun antécédent',
+            $tl($row['side_effects']),
+            fdate($row['createdate']),
+            td($row['season']),
         ];
-        fputcsv($content, array_map('csv_safe', $rowData));
+        fputcsv($content, array_map('csv_safe', $rowData), ';');
     }
 }
 
 header('Content-Type: text/csv; charset=UTF-8');
-header('Content-Disposition: attachment; filename="patients.csv"');
+header('Content-Disposition: attachment; filename="patients_vaxcluster.csv"');
 
 echo "\xEF\xBB\xBF";
 rewind($content);

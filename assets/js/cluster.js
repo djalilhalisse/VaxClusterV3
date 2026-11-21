@@ -1,5 +1,5 @@
 (function(){const c=document.getElementById('cluster');if(!c)return;const x=c.getContext('2d'),dpr=Math.min(devicePixelRatio||1,2);
-const cols=['#5646ff','#ff6a55','#12b886'],ctr=[[.32,.35],[.7,.42],[.48,.72]],pts=[];let W,H;
+const cols=['#2563eb','#ff6a55','#12b886'],ctr=[[.32,.35],[.7,.42],[.48,.72]],pts=[];let W,H;
 function size(){const r=c.getBoundingClientRect();W=r.width;H=r.height;c.width=W*dpr;c.height=H*dpr;x.setTransform(dpr,0,0,dpr,0,0)}size();addEventListener('resize',size);
 ctr.forEach((m,k)=>{for(let i=0;i<46;i++){const a=Math.random()*6.28,d=Math.pow(Math.random(),.6)*.15;pts.push({k,bx:m[0]+Math.cos(a)*d,by:m[1]+Math.sin(a)*d,p:Math.random()*6.28})}});
 const still=matchMedia('(prefers-reduced-motion:reduce)').matches;let t=0;
@@ -10,5 +10,5 @@ const q=(t*.12)%3,a=ctr[Math.floor(q)],b=ctr[(Math.floor(q)+1)%3],f=q%1,e=f<.5?2
 let bi=0,bd=9e9;ctr.forEach((m,k)=>{const d=Math.hypot(m[0]*W-nx,m[1]*H-ny);if(d<bd){bd=d;bi=k}});
 x.beginPath();x.moveTo(nx,ny);x.lineTo(ctr[bi][0]*W,ctr[bi][1]*H);x.strokeStyle=cols[bi];x.setLineDash([5,5]);x.lineWidth=1.5;x.stroke();x.setLineDash([]);
 ctr.forEach((m,k)=>{x.beginPath();x.arc(m[0]*W,m[1]*H,9,0,6.28);x.strokeStyle=cols[k];x.lineWidth=2.5;x.stroke()});
-x.beginPath();x.arc(nx,ny,9,0,6.28);x.fillStyle='#15132b';x.fill();x.strokeStyle='#fff';x.lineWidth=3;x.stroke();
+x.beginPath();x.arc(nx,ny,9,0,6.28);x.fillStyle='#0f1b33';x.fill();x.strokeStyle='#fff';x.lineWidth=3;x.stroke();
 if(!still){t+=.016;requestAnimationFrame(draw)}}draw()})();

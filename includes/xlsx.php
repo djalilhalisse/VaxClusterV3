@@ -15,7 +15,7 @@ function xl_esc($s) {
 function xl_s($ref, $text, $style) { return '<c r="' . $ref . '" s="' . $style . '" t="inlineStr"><is><t xml:space="preserve">' . xl_esc($text) . '</t></is></c>'; }
 function xl_n($ref, $num, $style) { return '<c r="' . $ref . '" s="' . $style . '"><v>' . $num . '</v></c>'; }
 function xl_b($ref, $style) { return '<c r="' . $ref . '" s="' . $style . '"/>'; }
-function xl_inc(array &$a, $k) { $k = trim((string)$k); if ($k === '') { $k = 'Not recorded'; } $a[$k] = ($a[$k] ?? 0) + 1; }
+function xl_inc(array &$a, $k) { $k = trim((string)$k); if ($k === '') { $k = 'Non renseigné'; } $a[$k] = ($a[$k] ?? 0) + 1; }
 function xl_rank(array $a) { uksort($a, function ($x, $y) use ($a) { return ($a[$y] <=> $a[$x]) ?: strcmp((string)$x, (string)$y); }); return $a; }
 
 function xl_zip(array $files) {
@@ -99,26 +99,26 @@ XML;
 
 /** Build the workbook from patient rows (assoc arrays; antecedents/side_effects separated by "|"). Returns the .xlsx bytes. */
 function xlsx_patients_workbook(array $rows) {
-    $now = gmdate('Y-m-d H:i') . ' UTC';
+    $now = gmdate('d/m/Y H:i') . ' UTC';
     $total = count($rows);
 
     // ---------- Sheet 1: Patients ----------
     // [header, width, type, field]  types: B bold name, L left, C centre, N number (centre), A list, F side effects
     $cols = [
-        ['National ID', 22, 'L', 'id_patient'], ['Name', 24, 'B', 'nom'], ['Gender', 11, 'C', 'sexe'], ['Age', 7, 'N', 'age'],
-        ['Address', 30, 'L', 'adresse'], ['Phone', 16, 'L', 'tel'], ['Vaccine', 18, 'L', 'type_vaccin'], ['Batch no.', 14, 'C', 'num_lot'],
-        ['Expiry date', 14, 'C', 'date_peremption'], ['Vaccination location', 22, 'L', 'lieu_vaccination'], ['Vaccination date', 14, 'C', 'date_vaccination'],
-        ['Time', 10, 'C', 'heure_vaccination'], ['Administration site', 18, 'L', 'site'], ['Dose', 9, 'C', 'dose'],
-        ['Medical history', 30, 'A', 'antecedents'], ['Reported side effects', 36, 'F', 'side_effects'], ['Date added', 19, 'C', 'createdate'], ['Season', 14, 'C', 'season'],
+        ['Numéro d’identité', 22, 'L', 'id_patient'], ['Nom', 24, 'B', 'nom'], ['Sexe', 11, 'C', 'sexe'], ['Âge', 7, 'N', 'age'],
+        ['Adresse', 30, 'L', 'adresse'], ['Téléphone', 16, 'L', 'tel'], ['Vaccin', 18, 'L', 'type_vaccin'], ['N° de lot', 14, 'C', 'num_lot'],
+        ['Date de péremption', 16, 'C', 'date_peremption'], ['Lieu de vaccination', 24, 'L', 'lieu_vaccination'], ['Date de vaccination', 16, 'C', 'date_vaccination'],
+        ['Heure', 10, 'C', 'heure_vaccination'], ['Site d’injection', 16, 'L', 'site'], ['Dose', 14, 'C', 'dose'],
+        ['Antécédents médicaux', 32, 'A', 'antecedents'], ['Effets secondaires déclarés', 38, 'F', 'side_effects'], ['Date d’ajout', 19, 'C', 'createdate'], ['Saison', 14, 'C', 'season'],
     ];
     $nc = count($cols);
     $lastCol = xl_col($nc - 1);
     $lastRow = max(4, 4 + $total);
     $base = ['L' => 4, 'C' => 6, 'B' => 8, 'N' => 6, 'A' => 4, 'F' => 4];
 
-    $x = '<row r="1" ht="34" customHeight="1">' . xl_s('A1', 'VaxCluster – Patient export', XL_TITLE);
+    $x = '<row r="1" ht="34" customHeight="1">' . xl_s('A1', 'VaxCluster – Export des patients', XL_TITLE);
     for ($c = 1; $c < $nc; $c++) { $x .= xl_b(xl_col($c) . '1', XL_TITLE); }
-    $x .= '</row><row r="2" ht="22" customHeight="1">' . xl_s('A2', "Generated $now  ·  $total patient" . ($total === 1 ? '' : 's'), XL_SUB);
+    $x .= '</row><row r="2" ht="22" customHeight="1">' . xl_s('A2', "Généré le $now  ·  $total patient" . ($total === 1 ? '' : 's'), XL_SUB);
     for ($c = 1; $c < $nc; $c++) { $x .= xl_b(xl_col($c) . '2', XL_SUB); }
     $x .= '</row><row r="3" ht="8" customHeight="1"/><row r="4" ht="34" customHeight="1">';
     foreach ($cols as $c => $col) { $x .= xl_s(xl_col($c) . '4', $col[0], XL_HEAD); }
@@ -130,7 +130,9 @@ function xlsx_patients_workbook(array $rows) {
         $x .= '<row r="' . $rn . '">';
         foreach ($cols as $c => $col) {
             $ref = xl_col($c) . $rn; $type = $col[2]; $v = trim((string)($r[$col[3]] ?? ''));
-            if ($type === 'A' || $type === 'F') { $v = implode(', ', array_filter(array_map('trim', explode('|', $v)), 'strlen')); }
+            if ($type === 'A' || $type === 'F') { $v = implode(', ', array_map('td', array_filter(array_map('trim', explode('|', $v)), 'strlen'))); }
+            elseif (in_array($col[3], ['sexe', 'type_vaccin', 'dose', 'site', 'season'], true)) { $v = td($v); }
+            elseif (in_array($col[3], ['date_peremption', 'date_vaccination', 'createdate'], true)) { $v = fdate($v); }
             if ($v === '') { $x .= xl_s($ref, '—', 11 + $band); continue; }
             if ($type === 'N' && is_numeric($v)) { $x .= xl_n($ref, $v + 0, 6 + $band); continue; }
             $style = ($type === 'F') ? 10 : $base[$type] + $band;
@@ -138,9 +140,9 @@ function xlsx_patients_workbook(array $rows) {
         }
         $x .= '</row>';
         // tallies for the Summary sheet
-        xl_inc($byV, $r['type_vaccin'] ?? ''); xl_inc($byG, $r['sexe'] ?? ''); xl_inc($byD, $r['dose'] ?? ''); xl_inc($byS, $r['season'] ?? '');
+        xl_inc($byV, td($r['type_vaccin'] ?? '')); xl_inc($byG, td($r['sexe'] ?? '')); xl_inc($byD, td($r['dose'] ?? '')); xl_inc($byS, td($r['season'] ?? ''));
         $effects = array_filter(array_map('trim', explode('|', (string)($r['side_effects'] ?? ''))), 'strlen');
-        if ($effects) { $with++; foreach ($effects as $e) { xl_inc($fx, $e); } }
+        if ($effects) { $with++; foreach ($effects as $e) { xl_inc($fx, td($e)); } }
     }
 
     $colsXml = '<cols>';
@@ -161,19 +163,19 @@ function xlsx_patients_workbook(array $rows) {
         . '</worksheet>';
 
     // ---------- Sheet 2: Summary ----------
-    $y = '<row r="1" ht="34" customHeight="1">' . xl_s('A1', 'VaxCluster – Summary', XL_TITLE) . xl_b('B1', XL_TITLE) . xl_b('C1', XL_TITLE) . '</row>';
-    $y .= '<row r="2" ht="22" customHeight="1">' . xl_s('A2', "Generated $now", XL_SUB) . xl_b('B2', XL_SUB) . xl_b('C2', XL_SUB) . '</row>';
+    $y = '<row r="1" ht="34" customHeight="1">' . xl_s('A1', 'VaxCluster – Synthèse', XL_TITLE) . xl_b('B1', XL_TITLE) . xl_b('C1', XL_TITLE) . '</row>';
+    $y .= '<row r="2" ht="22" customHeight="1">' . xl_s('A2', "Généré le $now", XL_SUB) . xl_b('B2', XL_SUB) . xl_b('C2', XL_SUB) . '</row>';
     $y .= '<row r="3" ht="10" customHeight="1"/>';
-    $y .= '<row r="4" ht="22" customHeight="1">' . xl_s('A4', 'Total patients', XL_KPIL) . xl_s('B4', 'With reported side effects', XL_KPIL) . xl_s('C4', 'Reporting rate', XL_KPIL) . '</row>';
+    $y .= '<row r="4" ht="22" customHeight="1">' . xl_s('A4', 'Patients au total', XL_KPIL) . xl_s('B4', 'Avec effets secondaires déclarés', XL_KPIL) . xl_s('C4', 'Taux de déclaration', XL_KPIL) . '</row>';
     $y .= '<row r="5" ht="40" customHeight="1">' . xl_n('A5', $total, XL_KPI) . xl_n('B5', $with, XL_KPI) . xl_n('C5', $total ? round($with / $total, 4) : 0, XL_KPIP) . '</row>';
 
-    $sections = [['By vaccine', 'Vaccine', $byV], ['By gender', 'Gender', $byG], ['By dose', 'Dose', $byD],
-                 ['By season of vaccination', 'Season', $byS], ['Most reported side effects', 'Side effect', $fx]];
+    $sections = [['Par vaccin', 'Vaccin', $byV], ['Par sexe', 'Sexe', $byG], ['Par dose', 'Dose', $byD],
+                 ['Par saison de vaccination', 'Saison', $byS], ['Effets secondaires les plus déclarés', 'Effet secondaire', $fx]];
     $r = 7; $cf = ''; $prio = 1;
     foreach ($sections as $sec) {
         list($title, $label, $data) = $sec;
         $y .= '<row r="' . $r . '" ht="26" customHeight="1">' . xl_s('A' . $r, $title, XL_SEC) . xl_b('B' . $r, XL_SEC) . xl_b('C' . $r, XL_SEC) . '</row>'; $r++;
-        $y .= '<row r="' . $r . '" ht="22" customHeight="1">' . xl_s('A' . $r, $label, XL_THL) . xl_s('B' . $r, 'Patients', XL_TH) . xl_s('C' . $r, '% of patients', XL_TH) . '</row>'; $r++;
+        $y .= '<row r="' . $r . '" ht="22" customHeight="1">' . xl_s('A' . $r, $label, XL_THL) . xl_s('B' . $r, 'Patients', XL_TH) . xl_s('C' . $r, '% des patients', XL_TH) . '</row>'; $r++;
         $first = $r;
         foreach (array_slice(xl_rank($data), 0, 10, true) as $k => $n) {
             $y .= '<row r="' . $r . '" ht="20" customHeight="1">' . xl_s('A' . $r, (string)$k, XL_TL) . xl_n('B' . $r, $n, XL_TC) . xl_n('C' . $r, $total ? round($n / $total, 4) : 0, XL_TP) . '</row>'; $r++;
@@ -181,7 +183,7 @@ function xlsx_patients_workbook(array $rows) {
         if ($r > $first) {
             $cf .= '<conditionalFormatting sqref="C' . $first . ':C' . ($r - 1) . '"><cfRule type="dataBar" priority="' . $prio++ . '"><dataBar><cfvo type="num" val="0"/><cfvo type="num" val="1"/><color rgb="FF8FB0FF"/></dataBar></cfRule></conditionalFormatting>';
         } else {
-            $y .= '<row r="' . $r . '">' . xl_s('A' . $r, 'No data yet', XL_TL) . xl_b('B' . $r, XL_TC) . xl_b('C' . $r, XL_TP) . '</row>'; $r++;
+            $y .= '<row r="' . $r . '">' . xl_s('A' . $r, 'Aucune donnée pour le moment', XL_TL) . xl_b('B' . $r, XL_TC) . xl_b('C' . $r, XL_TP) . '</row>'; $r++;
         }
         $r++; // spacer row
     }
@@ -203,8 +205,8 @@ function xlsx_patients_workbook(array $rows) {
     $files = [
         '[Content_Types].xml' => $head . '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>',
         '_rels/.rels' => $head . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>',
-        'docProps/core.xml' => $head . '<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>VaxCluster patient export</dc:title><dc:creator>VaxCluster</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">' . gmdate('Y-m-d\TH:i:s\Z') . '</dcterms:created></cp:coreProperties>',
-        'xl/workbook.xml' => $head . '<workbook ' . $ns . '><bookViews><workbookView activeTab="0"/></bookViews><sheets><sheet name="Patients" sheetId="1" r:id="rId1"/><sheet name="Summary" sheetId="2" r:id="rId2"/></sheets><definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">Patients!$A$4:$' . $lastCol . '$' . $lastRow . '</definedName><definedName name="_xlnm.Print_Titles" localSheetId="0">Patients!$4:$4</definedName></definedNames></workbook>',
+        'docProps/core.xml' => $head . '<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>VaxCluster – Export des patients</dc:title><dc:creator>VaxCluster</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">' . gmdate('Y-m-d\TH:i:s\Z') . '</dcterms:created></cp:coreProperties>',
+        'xl/workbook.xml' => $head . '<workbook ' . $ns . '><bookViews><workbookView activeTab="0"/></bookViews><sheets><sheet name="Patients" sheetId="1" r:id="rId1"/><sheet name="Synthèse" sheetId="2" r:id="rId2"/></sheets><definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">Patients!$A$4:$' . $lastCol . '$' . $lastRow . '</definedName><definedName name="_xlnm.Print_Titles" localSheetId="0">Patients!$4:$4</definedName></definedNames></workbook>',
         'xl/_rels/workbook.xml.rels' => $head . '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>',
         'xl/styles.xml' => xl_styles_xml(),
         'xl/worksheets/sheet1.xml' => $sheet1,

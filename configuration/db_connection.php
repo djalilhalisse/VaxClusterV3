@@ -22,5 +22,5 @@ try {
 } catch (Throwable $e) {
     error_log('Database connection failed: ' . $e->getMessage());   // details go to the server log, not to visitors
     http_response_code(500);
-    die('Database connection failed.');
+    die('Connexion à la base de données impossible.');
 }
